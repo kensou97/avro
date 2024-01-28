@@ -181,9 +181,10 @@ message(LZMA_PKG="${LZMA_PKG}")
 
 set(CODEC_LIBRARIES ${ZLIB_LIBRARIES} ${LZMA_LIBRARIES} ${SNAPPY_LIBRARIES})
 set(CODEC_PKG "@ZLIB_PKG@ @LZMA_PKG@ @SNAPPY_PKG@")
+set(CODEC_PKG1 "${ZLIB_PKG} ${LZMA_PKG} ${SNAPPY_PKG}")
 
 message(CODEC_PKG="${CODEC_PKG}")
-
+message(CODEC_PKG1="${CODEC_PKG1}")
 
 # Jansson JSON library
 pkg_check_modules(JANSSON jansson>=2.3)
