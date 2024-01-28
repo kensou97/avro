@@ -175,8 +175,15 @@ else (LZMA_FOUND)
     message("Disabled lzma codec. liblzma not found.")
 endif (LZMA_FOUND)
 
+message(ZLIB_PKG="${ZLIB_PKG}")
+message(SNAPPY_PKG="${SNAPPY_PKG}")
+message(LZMA_PKG="${LZMA_PKG}")
+
 set(CODEC_LIBRARIES ${ZLIB_LIBRARIES} ${LZMA_LIBRARIES} ${SNAPPY_LIBRARIES})
 set(CODEC_PKG "@ZLIB_PKG@ @LZMA_PKG@ @SNAPPY_PKG@")
+
+message(CODEC_PKG="${CODEC_PKG}")
+
 
 # Jansson JSON library
 pkg_check_modules(JANSSON jansson>=2.3)
