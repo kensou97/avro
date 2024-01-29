@@ -2,6 +2,6 @@ Name: avro-c
 Description: C library for parsing Avro data
 Version: @VERSION@
 URL: https://avro.apache.org/
-Libs: -L@prefix@/lib -lavro
+Libs: -L@prefix@/lib -lavro -lm
 Cflags: -I@prefix@/include
 Requires: @CODEC_PKG@
