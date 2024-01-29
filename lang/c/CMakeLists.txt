@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 2.4)
 project(AvroC C)
 enable_testing()
 
@@ -181,7 +181,7 @@ message(LZMA_PKG="${LZMA_PKG}")
 
 set(CODEC_LIBRARIES ${ZLIB_LIBRARIES} ${LZMA_LIBRARIES} ${SNAPPY_LIBRARIES})
 set(CODEC_PKG "@ZLIB_PKG@ @LZMA_PKG@ @SNAPPY_PKG@")
-set(CODEC_PKG "${ZLIB_PKG} ${LZMA_PKG} ${SNAPPY_PKG}")
+#set(CODEC_PKG "${ZLIB_PKG} ${LZMA_PKG} ${SNAPPY_PKG}")
 
 message(CODEC_PKG="${CODEC_PKG}")
 message(CODEC_PKG1="${CODEC_PKG1}")
