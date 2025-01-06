@@ -5,6 +5,7 @@ weight: 4
 date: 2021-10-25
 aliases:
 - spec.html
+- /docs/current/specification/
 ---
 
 <!--
@@ -107,7 +108,7 @@ For example, a linked-list of 64-bit values may be defined with:
   ]
 }
 ```
-	  
+
 ### Enums
 Enums use the type name "enum" and support the following attributes:
 
@@ -123,10 +124,11 @@ For example, playing card suits might be defined with:
 {
   "type": "enum",
   "name": "Suit",
-  "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
+  "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"],
+  "default" : "CLUBS"
 }
 ```
-	  
+
 ### Arrays
 Arrays use the type name "array" and support a single attribute:
 
@@ -137,10 +139,9 @@ For example, an array of strings is declared with:
 {
   "type": "array",
   "items" : "string",
-  "default": []
 }
 ```
-    
+
 ### Maps
 Maps use the type name "map" and support one attribute:
 
@@ -153,10 +154,9 @@ For example, a map from string to long is declared with:
 {
   "type": "map",
   "values" : "long",
-  "default": {}
 }
 ```
-    
+
 ### Unions
 Unions, as mentioned above, are represented using JSON arrays. For example, `["null", "string"]` declares a schema which may be either a null or string.
 
@@ -314,8 +314,8 @@ Primitive types are encoded in binary as follows:
 |64 | 80 01|
 |...|...|
 
-* a _float_ is written as 4 bytes. The float is converted into a 32-bit integer using a method equivalent to Java's [floatToIntBits](https://docs.oracle.com/javase/8/docs/api/java/lang/Float.html#floatToIntBits-float-) and then encoded in little-endian format.
-* a _double_ is written as 8 bytes. The double is converted into a 64-bit integer using a method equivalent to Java's [doubleToLongBits](https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html#doubleToLongBits-double-) and then encoded in little-endian format.
+* a _float_ is written as 4 bytes. The float is converted into a 32-bit integer using a method equivalent to Java's [floatToRawIntBits](https://docs.oracle.com/javase/8/docs/api/java/lang/Float.html#floatToRawIntBits-float-) and then encoded in little-endian format.
+* a _double_ is written as 8 bytes. The double is converted into a 64-bit integer using a method equivalent to Java's [doubleToRawLongBits](https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html#doubleToRawLongBits-double-) and then encoded in little-endian format.
 * _bytes_ are encoded as a long followed by that many bytes of data.
 * a _string_ is encoded as a long followed by that many bytes of UTF-8 encoded character data.
 For example, the three-character string "foo" would be encoded as the long value 3 (encoded as hex 06) followed by the UTF-8 encoding of 'f', 'o', and 'o' (the hex bytes 66 6f 6f):
@@ -340,7 +340,7 @@ For example, the record schema
   ]
 }
 ```
-	    
+
 An instance of this record whose a field has value 27 (encoded as hex 36) and whose b field has value "foo" (encoded as hex bytes 06 66 6f 6f), would be encoded simply as the concatenation of these, namely the hex byte sequence:
 ```
 36 06 66 6f 6f
@@ -445,7 +445,7 @@ Two items with the same schema are compared according to the following rules.
 * _map_ data may not be compared. It is an error to attempt to compare data containing maps unless those maps are in an `"order":"ignore"` record field.
 
 ## Object Container Files
-Avro includes a simple object container file format. A file has a schema, and all objects stored in the file must be written according to that schema, using binary encoding. Objects are stored in blocks that may be compressed. Syncronization markers are used between blocks to permit efficient splitting of files for MapReduce processing.
+Avro includes a simple object container file format. A file has a schema, and all objects stored in the file must be written according to that schema, using binary encoding. Objects are stored in blocks that may be compressed. Synchronization markers are used between blocks to permit efficient splitting of files for MapReduce processing.
 
 Files may include arbitrary user-specified metadata.
 
@@ -479,7 +479,7 @@ A file header is thus described by the following schema:
   ]
 }
 ```
-      
+
 A file data block consists of:
 
 * A long indicating the count of objects in this block.
@@ -578,7 +578,7 @@ For example, one may define a simple HelloWorld protocol with:
   }
 }
 ```
-        
+
 ## Protocol Wire Format
 
 ### Message Transport
@@ -651,7 +651,7 @@ The handshake process uses the following record schemas:
   ]
 }
 ```
-        
+
 * A client first prefixes each request with a `HandshakeRequest` containing just the hash of its protocol and of the server's protocol (`clientHash!=null, clientProtocol=null, serverHash!=null`), where the hashes are 128-bit MD5 hashes of the JSON protocol text. If a client has never connected to a given server, it sends its hash as a guess of the server's hash, otherwise it sends the hash that it previously obtained from this server.
 The server responds with a HandshakeResponse containing one of:
   * `match=BOTH, serverProtocol=null, serverHash=null` if the client sent the valid hash of the server's protocol and the server knows what protocol corresponds to the client's hash. In this case, the request is complete and the response data immediately follows the HandshakeResponse.
@@ -787,6 +787,8 @@ A logical type is always serialized using its underlying Avro type so that value
 Language implementations must ignore unknown logical types when reading, and should use the underlying Avro type. If a logical type is invalid, for example a decimal with scale greater than its precision, then implementations should ignore the logical type and use the underlying Avro type.
 
 ### Decimal
+
+#### Fixed precision
 The `decimal` logical type represents an arbitrary-precision signed decimal number of the form _unscaled × 10<sup>-scale</sup>_.
 
 A `decimal` logical type annotates Avro _bytes_ or _fixed_ types. The byte array must contain the two's-complement representation of the unscaled integer value in big-endian byte order. The scale is fixed, and is specified using an attribute.
@@ -810,11 +812,11 @@ Scale must be zero or a positive integer less than or equal to the precision.
 
 For the purposes of schema resolution, two schemas that are `decimal` logical types _match_ if their scales and precisions match.
 
-**alternative**
+#### Scalable precision
 
 As it's not always possible to fix scale and precision in advance for a decimal field, `big-decimal` is another `decimal` logical type restrict to Avro _bytes_.
 
-_Currently only available in Java and Rust_.
+_Currently only available in C++, Java and Rust_.
 
 ```json
 {
@@ -822,17 +824,27 @@ _Currently only available in Java and Rust_.
   "logicalType": "big-decimal"
 }
 ```
-Here, as scale property is stored in value itself it needs more bytes than preceding `decimal` type, but it allows more flexibility.
+Here, bytes array contains two serialized properties. First part is an Avro byte arrays which is the two's-complement representation of the unscaled integer value in big-endian byte order. The second part is the scale property stored as an Avro integer. Scale must be zero or a positive integer less than or equal to the precision. Value itself needs more bytes than preceding `decimal` type, but it allows more flexibility.
 
 ### UUID
+
 The `uuid` logical type represents a random generated universally unique identifier (UUID).
 
-A `uuid` logical type annotates an Avro `string`. The string has to conform with [RFC-4122](https://www.ietf.org/rfc/rfc4122.txt)
+A `uuid` logical type annotates an Avro `string` or `fixed` of length 16. Both the string and `fixed` byte layout have to conform with [RFC-4122](https://www.ietf.org/rfc/rfc4122.txt).
 
-The following schema represents a uuid:
+The following schemas represent a uuid:
+
 ```json
 {
   "type": "string",
+  "logicalType": "uuid"
+}
+```
+
+```json
+{
+  "type": "fixed",
+  "size": 16,
   "logicalType": "uuid"
 }
 ```
@@ -878,7 +890,7 @@ The `local-timestamp-{millis,micros,nanos}` logical type represents a timestamp 
 - `local-timestamp-micros`: logical type annotates an Avro `long`, where the long stores the number of microseconds, from 1 January 1970 00:00:00.000000.
 - `local-timestamp-nanos`: logical type annotates an Avro `long`, where the long stores the number of nanoseconds, from 1 January 1970 00:00:00.000000000.
 
-Example: Given an event at noon local time (12:00) on January 1, 2000, in Helsinki where the local time was two hours east of UTC (UTC+2). The timestamp is converted to Avro long 946684800000 (milliseconds) and then written.
+Example: Given an event at noon local time (12:00) on January 1, 2000, in Helsinki where the local time was two hours east of UTC (UTC+2). The timestamp is converted to Avro long 946728000000 (milliseconds) and then written.
 
 ### Duration
 The `duration` logical type represents an amount of time defined by a number of months, days and milliseconds. This is not equivalent to a number of milliseconds, because, depending on the moment in time from which the duration is measured, the number of days in the month and number of milliseconds in a day may differ. Other standard periods such as years, quarters, hours and minutes can be expressed through these basic periods.

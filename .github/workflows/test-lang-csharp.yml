@@ -46,8 +46,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            3.1.x
-            5.0.x
             6.0.x
             7.0.x
             8.0.x
@@ -78,8 +76,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            3.1.x
-            5.0.x
             6.0.x
             7.0.x
             8.0.x
@@ -92,9 +88,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: 'Setup Temurin JDK 8, 11, 17 & 21'
+        uses: actions/setup-java@6a0805fcefea3d4657a47ac4c165951e33482018 # v4.2.2
+        with:
+          distribution: 'temurin'
+          java-version: |
+            8
+            11
+            17
+            21
+
+      - name: 'Setup Maven 3.9.6'
+        uses: stCarolas/setup-maven@d6af6abeda15e98926a57b5aa970a96bb37f97d1 # v5
+        with:
+          maven-version: 3.9.6
+
       - name: Install Java Avro for Interop Test
         working-directory: .
-        run: mvn -B install -DskipTests
+        run: mvn -B install -PskipQuality
 
       - name: Create Interop Data Directory
         working-directory: .
@@ -109,37 +120,3 @@ jobs:
 
       - name: Run Interop Tests
         run: ./build.sh interop-data-test
-
-  arm64:
-    name: C# on Linux ARM64
-    runs-on: ["self-hosted", "asf-arm"]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache Nuget
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -q -y wget libzstd-dev libicu-dev
-          wget https://dot.net/v1/dotnet-install.sh
-          bash ./dotnet-install.sh --channel "3.1" --install-dir "$HOME/.dotnet" # 3.1
-          bash ./dotnet-install.sh --channel "5.0" --install-dir "$HOME/.dotnet" # 5.0
-          bash ./dotnet-install.sh --channel "6.0" --install-dir "$HOME/.dotnet" # 6.0
-          bash ./dotnet-install.sh --channel "7.0" --install-dir "$HOME/.dotnet" # 7.0
-          bash ./dotnet-install.sh --channel "8.0" --install-dir "$HOME/.dotnet" # 8.0
-          
-      - name: Build
-        run: |
-          set -x
-          export PATH=$HOME/.dotnet:$PATH
-          dotnet --list-sdks
-          ./build.sh clean test
